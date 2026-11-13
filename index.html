@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Diligence</title>
+<meta name="description" content="Personal finance with a due-diligence view: what you really spend in a normal month.">
+<meta name="theme-color" content="#191b18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diligence">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="icons/favicon.ico">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="root"></div>
+<div id="splash" role="status" aria-label="Loading">
+<svg class="sp-ic" viewBox="0 0 512 512" aria-hidden="true">
+<defs>
+<linearGradient id="spbg" x1="0.15" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#D08676"/><stop offset="1" stop-color="#814F42"/></linearGradient>
+<clipPath id="spc"><circle cx="342" cy="192" r="98"/></clipPath>
+<g id="spk">
+<circle cx="224" cy="302" r="128" fill="#F0D5B8"/>
+<circle cx="224" cy="296" r="128" fill="#FFF4E6"/>
+<circle cx="224" cy="296" r="95" fill="#FFE6D1"/>
+<circle cx="224" cy="296" r="97" fill="none" stroke="#E5502E" stroke-width="5" opacity="0.45"/>
+<g transform="translate(224 278) scale(.78) translate(-224 -296)">
+<path d="M150 346C166 328 184 324 194 318L196 306C180 296 176 270 184 252C194 228 232 220 254 238C262 246 264 256 262 264L276 284L264 288L268 294L262 298L266 306C264 316 254 322 246 322L248 328C270 330 292 334 300 346Z" fill="#E5502E"/>
+<ellipse cx="251" cy="258" rx="3.4" ry="2.4" fill="#FFE6D1"/>
+<path d="M210 270c-6 0-8 10-2 14" fill="none" stroke="#FFE6D1" stroke-width="3" stroke-linecap="round"/>
+<path d="M186 254C196 238 226 230 250 241" fill="none" stroke="#FFE6D1" stroke-width="3" stroke-linecap="round"/>
+</g>
+<path d="M175.8 364.8A84 84 0 0 1 140.3 303.3" fill="none" stroke="#E5502E" stroke-width="6" stroke-linecap="round" stroke-dasharray="7 6" opacity="0.8"/>
+<path d="M272.2 364.8A84 84 0 0 0 307.7 303.3" fill="none" stroke="#E5502E" stroke-width="6" stroke-linecap="round" stroke-dasharray="7 6" opacity="0.8"/>
+<path d="M200 342L210 336V372M202 372H218" fill="none" stroke="#E5502E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="238" cy="354" rx="11" ry="18" fill="none" stroke="#E5502E" stroke-width="7"/>
+</g>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#spbg)"/>
+<g class="sp-coin"><use href="#spk"/></g>
+<g class="sp-lens">
+<circle cx="342" cy="192" r="98" fill="#1E1B2E"/>
+<g clip-path="url(#spc)"><g transform="translate(342 192) scale(2.2) translate(-290 -240)">
+<use href="#spk"/>
+<circle cx="224" cy="296" r="120" fill="none" stroke="#E5502E" stroke-width="8" stroke-dasharray="2.6 4.2" opacity="0.6"/>
+<circle cx="224" cy="296" r="108" fill="none" stroke="#E5502E" stroke-width="5" stroke-dasharray="0.1 9.5" stroke-linecap="round"/>
+</g></g>
+<circle cx="342" cy="192" r="98" fill="none" stroke="#FFF4E6" stroke-width="10"/>
+</g>
+</svg>
+<div class="sp-name">Diligence</div>
+<div class="sp-ver">Alpha 2.0</div>
+</div>
+<noscript><p style="padding:24px;font-family:sans-serif">Diligence needs JavaScript.</p></noscript>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
