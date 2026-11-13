@@ -5,7 +5,7 @@
 //   supabaseKey : the "Publishable key"        (starts with sb_publishable_ ; the older "anon" key also works)
 // Both are safe to publish: the database only lets a signed-in user see their own rows.
 window.DILIGENCE_CONFIG = {
-  supabaseUrl: "https://YOUR-PROJECT.supabase.co",
-  supabaseKey: "YOUR-PUBLISHABLE-KEY",
+  supabaseUrl: "https://osgxajnbyiusborhmgci.supabase.co",
+  supabaseKey: "sb_publishable_qhib5G_AzPSiqRg6LwjKnQ_mMauGLNi",
   googleSignIn: false        // set to true after you enable Google under Authentication > Sign In / Providers
 };
