@@ -835,7 +835,21 @@ export const TR = {
   "{0} → {1}": "{0} → {1}",
   "{0}, first {1} days": "{0}, ilk {1} gün",
   "{0}, same days": "{0}, aynı günler",
-  "× {0} months": "× {0} ay"
+  "× {0} months": "× {0} ay",
+  "Welcome to Diligence": "Diligence'a hoş geldin",
+  "Enter your first payment method": "İlk ödeme yöntemini gir",
+  "Payment method name": "Ödeme yönteminin adı",
+  "e.g. QNB Checking": "örn. QNB Vadesiz",
+  "Add another payment method": "Başka bir ödeme yöntemi ekle",
+  "Details": "Detay",
+  "Turn on automatic capture?": "Otomatik yakalama açılsın mı?",
+  "Turn on": "Aç",
+  "Skip": "Geç",
+  "Continue": "Devam",
+  "Edit expense categories": "Gider kategorilerini düzenle",
+  "Unlock Diligence features?": "Diligence özelliklerini açmak ister misiniz?",
+  "Purchase": "Satın al",
+  "Set up shortcut": "Kısayol kur"
 };
 
 // messages with a changing part (mostly from the database): [pattern, Turkish text or (parts, translate) => text]

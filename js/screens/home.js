@@ -1,12 +1,12 @@
 // home.js - Overview: the number for today, the net cash position, this month's spend, cards.
-import { h, useState, Pg, Ic, P, Pie, PIEC, Em, Sw, MonthPick, Frag, Money } from '../lib.js';
+import { h, useState, Ic, P, Pie, PIEC, Em, Sw, MonthPick, cx } from '../lib.js';
 import { overview, dim } from '../engine.js';
 import { t, tf, PREF, tl, mlong, dshort, dmini, nfmt, mv } from '../prefs.js';
-import { saveSettings, load, useStore } from '../store.js';
+import { saveSettings, useStore } from '../store.js';
 
 const SWC = ['#dfff00', '#ff8c77', '#bdedf2'];
 
-export function Home({ m, go }) {
+export function Home({ m, go, nIb, openInbox, enter }) {
   const S = useStore();
   const [mo, setMo] = useState(''), [open, setOpen] = useState(false);
   const dil = PREF.dil, o = overview(m, mo || m.month, dil);
@@ -19,7 +19,6 @@ export function Home({ m, go }) {
   const insText = !ins ? t('Not enough history for a comparison yet')
     : Math.abs(ins.pct) > 300 ? tf(ins.pct > 0 ? '{0} is up {1} on last month' : '{0} is down {1} on last month', ins.name, tl(Math.abs(ins.now - ins.before), 0))
       : tf(ins.pct > 0 ? '{0} is up {1}% on last month' : '{0} is down {1}% on last month', ins.name, Math.abs(ins.pct).toLocaleString('tr-TR', { maximumFractionDigits: 0 }));
-  const first = m.entries.every(e => e.kind === 'opening');
   const over = o.monthLeft != null && o.monthLeft < 0;
   const budStatus = (ok, text) => h('div.bud-status', null, h(Ic, { n: ok ? 'check' : 'alert', s: 13 }), h('span', null, text));
   const budgetBox = o.current
@@ -33,21 +32,20 @@ export function Home({ m, go }) {
       h('div.sn-top', null, h('span.mono-label', t('Left at month end'))),
       h('div.sn-v', null, o.monthLeft == null ? '–' : P(o.monthLeft, 0)),
       o.monthLeft == null ? budStatus(false, t('No budget set')) : budStatus(o.monthLeft >= 0, tf('Budget {0}', tl(o.budget, 0))));
-  return h(Pg, {
-    title: t('Overview'),
-    sub: h(MonthPick, { months: o.months, v: o.month, cur: m.month, closed: !o.current, text: o.current ? dshort(m.today) : mlong(o.month), on: k => setMo(k === m.month ? '' : k), label: mlong }),
-    act: h('div.tools', null,
-      h('label.dil', null, h('span.mono-label', { lang: 'en' }, 'Diligence'), h(Sw, { on: dil, set: v => saveSettings({ dil: v }), label: t('Diligence') })),
-      h('button.ibtn2', { onClick: load, 'aria-label': t('Refresh'), disabled: S.syncing }, h(Ic, { n: 'refresh', s: 16 })))
-  },
-    first ? h('div.card', null,
-      h('b', null, t('Welcome. Three things to get going:')),
-      h('ol.steps', null,
-        h('li', null, t('Add your accounts and cards with today\'s balances.'), ' ', h('button.linkb', { onClick: () => go('set') }, t('Open Settings'))),
-        h('li', null, t('Set a monthly budget.'), ' ', h('button.linkb', { onClick: () => go('dil', 'plan') }, t('Open Cashflow & capex'))),
-        h('li', null, t('Add your first expense with the + button, or import a bank statement.'), ' ', h('button.linkb', { onClick: () => go('mass') }, t('Open Mass entry'))))) : null,
+  // no page title: the brand sits on the same line as the Diligence switch and the notifications button
+  return h('div', { className: cx('home', enter && 'ov-enter') },
+    h('header.hd.hd-home', null,
+      h('div.hh-r', null,
+        h('div.brand', null, h('img', { src: 'icons/icon-192.png', alt: '' }), t('Diligence'), S.syncing ? h('span.sync', { title: t('Syncing') }) : null),
+        h('div.tools', null,
+          h('label.dil', null, h('span.mono-label', { lang: 'en' }, 'Diligence'), h(Sw, { on: dil, set: v => saveSettings({ dil: v }), label: t('Diligence') })),
+          h('button.ibtn2.bell', { onClick: openInbox, title: t('Notifications'), 'aria-label': t('Notifications') + (nIb ? ' (' + nIb + ')' : '') },
+            h(Ic, { n: 'bell', s: 16 }), nIb ? h('span.bdg', nIb > 9 ? '9+' : String(nIb)) : null))),
+      h(MonthPick, { months: o.months, v: o.month, cur: m.month, closed: !o.current, text: o.current ? dshort(m.today) : mlong(o.month), on: k => setMo(k === m.month ? '' : k), label: mlong })),
+    h('div.ct', null,
     h('section.pos-net', null,
-      h('div.pos-top', null, h('span.mono-label', t('Cash')), h(Ic, { n: 'wallet', s: 18 })),
+      h('div.pos-top', null, h('span.mono-label', t('Cash')),
+        h('button.eyeb', { type: 'button', onClick: () => saveSettings({ priv: !PREF.priv }), title: t('Hide balances'), 'aria-label': t('Hide balances'), 'aria-pressed': PREF.priv }, h(Ic, { n: PREF.priv ? 'eyeoff' : 'eye', s: 17 }))),
       h('div.pos-amt', null, P(o.cash)),
       h('div.pos-foot', null,
         h('span', null, o.restricted > 0.005 ? tf('+ {0} on meal cards', tl(o.restricted, 0)) : ''),
@@ -83,5 +81,5 @@ export function Home({ m, go }) {
           c.future > 0.005 ? h('span.cc-sub', null, tf('{0} in instalments', tl(c.future, 0))) : null),
         h('div.cc-end', null, h('span.cc-lim', null, P(c.debt, 0)),
           h('span.cc-sub', null, c.available != null ? tf('{0} available', mv(nfmt(c.available, 0))) : t('debt'))))))
-      : null);
+      : null));
 }

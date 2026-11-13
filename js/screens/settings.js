@@ -183,9 +183,6 @@ function Look() {
       F(t('Glass'), h('div', null, h('input.rg', { type: 'range', min: 0, max: 100, step: 5, value: PREF.glass, 'aria-label': t('Glass'), onChange: e => set({ glass: Number(e.target.value) }) }), h('div.rgl', null, h('span', null, t('Clear')), h('span', null, PREF.glass + '%'), h('span', null, t('Solid'))))),
       F(t('Decimals'), h(Pills, { v: PREF.dec, set: v => set({ dec: v }), o: [[0, '1.234'], [1, '1.234,5'], [2, '1.234,56']] })),
       F(t('Currency symbol'), In(PREF.cur, v => set({ cur: v.slice(0, 4) || '₺' }), { style: { maxWidth: 120 } }))),
-    h('div.card', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-      h('div', { style: { flex: 1 } }, h('b', null, t('Hide balances')), h('div.help', { style: { marginTop: 2 } }, t('Hide amounts everywhere (shown as ***,*)'))),
-      h(Sw, { on: PREF.priv, set: v => set({ priv: v }), label: t('Hide balances') })),
     h('div.help', null, t('Settings are saved to your account, so they follow you to every device.')));
 }
 

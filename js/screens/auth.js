@@ -24,7 +24,6 @@ export function Auth({ error }) {
   };
   return h('form.auth', { onSubmit: submit, noValidate: true },
     h(Logo),
-    h('p.auth-tag', t('See what you really spend in a normal month, not just what hit your card.')),
     h(Pills, { v: mode === 'reset' ? '' : mode, set: sw, o: [['in', t('Sign in')], ['up', t('Create account')]] }),
     F(t('E-mail'), In(email, setEmail, { type: 'email', autoComplete: 'email', inputMode: 'email', autoCapitalize: 'none', placeholder: 'you@example.com' })),
     mode !== 'reset' ? F(t('Password'), In(pw, setPw, { type: 'password', autoComplete: mode === 'in' ? 'current-password' : 'new-password', placeholder: mode === 'up' ? t('At least 8 characters') : '' })) : null,
@@ -35,7 +34,6 @@ export function Auth({ error }) {
       h('button.btn.gh', { type: 'button', disabled: busy, onClick: () => run(() => auth.google()) }, t('Continue with Google'))) : null,
     mode === 'in' ? h('button.auth-alt', { type: 'button', onClick: () => sw('reset') }, t('Forgot your password?'))
       : mode === 'reset' ? h('button.auth-alt', { type: 'button', onClick: () => sw('in') }, t('Back to sign in')) : null,
-    mode === 'up' ? h('p.note', t('Your account starts with a ready-made set of categories. You can change them any time in Settings.')) : null,
     h(Lang));
 }
 
