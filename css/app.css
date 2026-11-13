@@ -588,3 +588,7 @@ input[type=range].rg:focus-visible{outline:2px solid var(--txt);outline-offset:2
 .tdet-f .tl{margin:0;white-space:nowrap}
 .tdet-f .ti{width:72px;height:42px;text-align:center;padding:0 8px}
 @media(max-height:720px){.tut .tt.lg{font-size:34px}.tamt input{font-size:46px}.tut .tbody{gap:12px}.tut .ti{height:48px}.tsub{font-size:16px;margin-top:6px}}
+.tamt2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tamt.sm{gap:4px;min-width:0}.tamt.sm .tl{font-size:13px;white-space:nowrap}
+.tamt.sm .amt-cur{font-size:20px}.tamt.sm input{font-size:30px;max-width:calc(50vw - 56px)}.tamt.sm .amt-line{gap:4px}
+.tamt.sm .amt-rule{width:48px}.tamt.sm:focus-within .amt-rule{width:72px}

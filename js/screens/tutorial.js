@@ -17,7 +17,7 @@ export function Tutorial({ m, leaving, done }) {
   const [page, setPage] = useState(0), [prev, setPrev] = useState(null), [rev, setRev] = useState(false), [leave, setLeave] = useState(false);
   const [busy, setBusy] = useState(false), [err, setErr] = useState(''), [shake, setShake] = useState(0);
   const [pms, setPms] = useState([]);
-  const [f, setF] = useState({ amount: '', name: '', kind: 'cash', day: '', det: false });
+  const [f, setF] = useState({ amount: '', lim: '', name: '', kind: 'cash', day: '', det: false });
   const [cap, setCap] = useState({});
   const [cats, setCats] = useState(() => accountsOf(m, ['expense']).filter(a => !a.system_key).map(a => ({ id: a.id, name: a.name, orig: a.name })));
   const [gone, setGone] = useState([]);
@@ -54,17 +54,33 @@ export function Tutorial({ m, leaving, done }) {
   const nudge = () => { setShake(x => x + 1); if (nameRef.current) nameRef.current.focus(); };
 
   /* ---------- payment methods ---------- */
-  const setAmount = v => {
+  const setAmount = (v, k) => {
     v = v.replace(/[^0-9.,]/g, '').replace(/\./g, ',');
     const i = v.indexOf(',');
     if (i > -1) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/,/g, '').slice(0, 2);
-    setF(p => ({ ...p, amount: v.replace(',', '.') }));
+    setF(p => ({ ...p, [k || 'amount']: v.replace(',', '.') }));
   };
+  // amount field in the style of Add entry; a card shows two of them side by side
+  const amtIn = (id, label, k, sm) => h('label', { className: cx('tamt', sm && 'sm'), htmlFor: id },
+    h('span.tl', null, label),
+    h('span.amt-line', null, h('span.amt-cur', PREF.cur),
+      h('input', { id, inputMode: 'decimal', autoComplete: 'off', placeholder: '0', value: String(f[k]).replace('.', ','), style: { width: Math.max(2, String(f[k]).length + 0.6) + 'ch', fontSize: sm ? (String(f[k]).length > 8 ? 20 : String(f[k]).length > 6 ? 24 : 30) : undefined }, onChange: e => setAmount(e.target.value, k) })),
+    h('span.amt-rule'));
   async function addPm() {
     const name = f.name.trim();
     if (!name) return false;
-    const p = { name, kind: f.kind }, amt = num(f.amount);
-    if (amt) p.opening = { amount: amt, date: m.today };
+    const p = { name, kind: f.kind };
+    if (f.kind === 'card') {
+      // the bank shows the actual (total) limit and the current (available) limit: the difference is today's debt
+      const avail = num(f.amount), lim = num(f.lim);
+      if (f.amount !== '' && f.lim === '') throw new Error('Enter the actual limit too.');
+      if (f.lim !== '') {
+        if (avail > lim) throw new Error('Current limit cannot be more than the actual limit.');
+        p.credit_limit = lim;
+        const debt = Math.round((lim - avail) * 100) / 100;
+        if (debt > 0) p.opening = { amount: debt, date: m.today };
+      }
+    } else { const amt = num(f.amount); if (amt) p.opening = { amount: amt, date: m.today }; }
     if (f.kind === 'card' && f.day !== '') {
       const d = Number(f.day);
       if (!(d >= 1 && d <= 31)) throw new Error('Days must be between 1 and 31.');
@@ -72,7 +88,7 @@ export function Tutorial({ m, leaving, done }) {
     }
     const a = await saveAccount(p);
     setPms(list => [...list, { id: a.id, name: a.name, kind: a.kind }]);
-    setF(p0 => ({ amount: '', name: '', kind: p0.kind, day: '', det: false }));
+    setF(p0 => ({ amount: '', lim: '', name: '', kind: p0.kind, day: '', det: false }));
     return true;
   }
   const more = () => run(async () => { if (!f.name.trim()) return nudge(); await addPm(); if (nameRef.current) nameRef.current.focus(); });
@@ -91,11 +107,8 @@ export function Tutorial({ m, leaving, done }) {
     h('div.tbody', null,
       pms.length ? h('div.tchips', null, pms.map(p => h('span.tchip', { key: p.id }, h('span', null, p.name), h('small', null, t(p.kind === 'card' ? 'Credit card' : 'Cash & bank')),
         h('button', { type: 'button', 'aria-label': t('Remove'), disabled: busy, onClick: () => dropPm(p) }, X(12))))) : null,
-      h('label.tamt', { htmlFor: 'tamt' },
-        h('span.tl', null, t('Amount (₺)')),
-        h('span.amt-line', null, h('span.amt-cur', PREF.cur),
-          h('input', { id: 'tamt', inputMode: 'decimal', autoComplete: 'off', placeholder: '0', value: String(f.amount).replace('.', ','), style: { width: Math.max(2, String(f.amount).length + 0.6) + 'ch' }, onChange: e => setAmount(e.target.value) })),
-        h('span.amt-rule')),
+      f.kind === 'card' ? h('div.tamt2', null, amtIn('tamt', t('Current limit (₺)'), 'amount', true), amtIn('tlim', t('Actual limit (₺)'), 'lim', true))
+        : amtIn('tamt', t('Amount (₺)'), 'amount'),
       h('div', { key: 'n' + shake, className: shake ? 'shake' : '' },
         h('label.tl', { htmlFor: 'tnm' }, t('Payment method name')),
         h('input.ti', { id: 'tnm', ref: nameRef, value: f.name, placeholder: t('e.g. QNB Checking'), autoCapitalize: 'words', autoComplete: 'off', onChange: e => setF(p => ({ ...p, name: e.target.value })) })),

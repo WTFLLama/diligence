@@ -849,7 +849,11 @@ export const TR = {
   "Edit expense categories": "Gider kategorilerini düzenle",
   "Unlock Diligence features?": "Diligence özelliklerini açmak ister misiniz?",
   "Purchase": "Satın al",
-  "Set up shortcut": "Kısayol kur"
+  "Set up shortcut": "Kısayol kur",
+  "Current limit (₺)": "Güncel limit (₺)",
+  "Actual limit (₺)": "Asıl limit (₺)",
+  "Enter the actual limit too.": "Asıl limiti de gir.",
+  "Current limit cannot be more than the actual limit.": "Güncel limit asıl limitten büyük olamaz."
 };
 
 // messages with a changing part (mostly from the database): [pattern, Turkish text or (parts, translate) => text]
