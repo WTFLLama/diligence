@@ -1,11 +1,14 @@
-// auth.js - sign in, create an account, reset a password. Also the "not connected yet" screen.
-import { h, useState, F, In, Er, useAct, Pills } from '../lib.js';
+// auth.js - sign in, create an account, reset a password, unlock the encrypted data on a new device, show the recovery code.
+// Also the "not connected yet" screen.
+import { h, useState, F, In, Er, useAct, Pills, Confirm, Sk, Frag } from '../lib.js';
 import { auth, config } from '../api.js';
 import { t, PREF, terr } from '../prefs.js';
-import { saveSettings, endRecovery, say } from '../store.js';
+import { useStore, saveSettings, signIn, signUp, signOut, unlock, unlockWithCode, finishRecovery, startOver, vaultState, say } from '../store.js';
 
 const Logo = () => h('div.auth-logo', null, h('img', { src: 'icons/icon-192.png', alt: '' }), h('b', 'Diligence'));
 const Lang = () => h('div', { style: { marginTop: 22 } }, h(Pills, { v: PREF.lang, set: v => saveSettings({ lang: v }), o: [['en', 'English'], ['tr', 'Türkçe']] }));
+const CodeIn = (v, set) => In(v, x => set(x.toUpperCase()), { autoCapitalize: 'characters', autoCorrect: 'off', autoComplete: 'off', spellCheck: false, placeholder: 'XXXX-XXXX-XXXX-XXXX-XXXX-XXXX', style: { fontFamily: 'var(--mono)', letterSpacing: '.5px' } });
+const LOST = { title: 'Start over?', text: 'Without your password or recovery code nobody can read your data, not even us. Starting over erases it for good and gives you an empty account.', yes: 'Erase and start over' };
 
 export function Auth({ error }) {
   const [mode, setMode] = useState('in'), [email, setEmail] = useState(''), [pw, setPw] = useState(''), [info, setInfo] = useState('');
@@ -17,8 +20,8 @@ export function Auth({ error }) {
     if (!/^\S+@\S+\.\S+$/.test(em)) return setErr(t('Enter your e-mail address.'));
     if (mode !== 'reset' && pw.length < 8) return setErr(t('Password must be at least 8 characters.'));
     run(async () => {
-      if (mode === 'in') await auth.signIn(em, pw);
-      else if (mode === 'up') { const r = await auth.signUp(em, pw); if (!r.session) setInfo(t('Almost there: open the link we just e-mailed you to confirm your address, then sign in.')); }
+      if (mode === 'in') await signIn(em, pw);
+      else if (mode === 'up') { const r = await signUp(em, pw); if (!r.session) setInfo(t('Almost there: open the link we just e-mailed you to confirm your address, then sign in.')); }
       else { await auth.reset(em); setInfo(t('If that address has an account, a reset link is on its way.')); }
     });
   };
@@ -37,19 +40,62 @@ export function Auth({ error }) {
     h(Lang));
 }
 
-// shown after the user opens the reset link from the e-mail
-export function NewPassword() {
-  const [pw, setPw] = useState(''), [run, busy, err, setErr] = useAct();
+// Signed in, but this device does not hold the key to the data yet (new device, or the sign-in came from an e-mail link).
+export function Lock() {
+  const S = useStore(), create = S.lock === 'create';
+  const [byCode, setByCode] = useState(false), [pw, setPw] = useState(''), [code, setCode] = useState(''), [ask, setAsk] = useState(false);
+  const [run, busy, err, setErr] = useAct();
   const submit = e => {
     e.preventDefault();
     if (pw.length < 8) return setErr(t('Password must be at least 8 characters.'));
-    run(async () => { await auth.setPassword(pw); say(t('Password changed ✓')); endRecovery(); });
+    run(() => (byCode && !create ? unlockWithCode(code, pw) : unlock(pw)));
+  };
+  return h('form.auth', { onSubmit: submit, noValidate: true },
+    h(Logo),
+    h('p.auth-tag', t('Enter your password to open your data on this device.')),
+    byCode && !create ? F(t('Recovery code'), CodeIn(code, setCode)) : null,
+    F(t('Password'), In(pw, setPw, { type: 'password', autoComplete: 'current-password' })),
+    h(Er, { e: err }),
+    h('button.btn', { type: 'submit', disabled: busy }, busy ? t('Working...') : create ? t('Continue') : t('Unlock')),
+    create ? null : h('button.auth-alt', { type: 'button', onClick: () => { setByCode(!byCode); setErr(''); } }, byCode ? t('Back') : t('Use my recovery code')),
+    byCode && !create ? h('button.auth-alt', { type: 'button', onClick: () => (pw.length < 8 ? setErr(t('Password must be at least 8 characters.')) : setAsk(true)) }, t('I lost my recovery code')) : null,
+    h('button.auth-alt', { type: 'button', onClick: signOut }, t('Sign out')),
+    ask ? h(Confirm, { title: t(LOST.title), text: t(LOST.text), yes: t(LOST.yes), danger: true, busy, error: err, onNo: () => setAsk(false), onYes: () => run(async () => { await startOver(pw); setAsk(false); }) }) : null);
+}
+
+// Shown once, right after the account's data key is made. The code is the only way back in if the password is forgotten.
+export function RecoveryCode({ code }) {
+  const [copied, setCopied] = useState(false), g = String(code || '').split('-');
+  const copy = async () => { try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch (e) { /* the code stays on screen */ } };
+  return h('div.tut.dark', { style: { '--tbg': '#191b18' } },
+    h('div.tut-in', null,
+      h('div.tut-stage', null, h('section.tp', null,
+        h('h1.tt', null, t('Your recovery code')),
+        h('p.tsub', null, t('If you forget your password, this code is the only way back to your data. Keep it somewhere safe.')),
+        h('div.tbody', null,
+          h('div.rcode', { 'aria-label': code }, [0, 2, 4].map(i => h('div', { key: i }, h('span', null, g[i]), h('span', null, g[i + 1])))),
+          h('button.tadd', { type: 'button', onClick: copy }, copied ? t('Copied ✓') : t('Copy'))),
+        h('div.tfoot', null, h('button.tbtn', { type: 'button', onClick: () => saveSettings({ rc_ack: true }) }, t('I saved it')))))));
+}
+
+// shown after the user opens the reset link from the e-mail
+export function NewPassword() {
+  const S = useStore(), v = vaultState(), settled = S.phase === 'lock' || S.phase === 'ready', needCode = settled && v.exists && !v.unlocked;
+  const [pw, setPw] = useState(''), [code, setCode] = useState(''), [ask, setAsk] = useState(false), [run, busy, err, setErr] = useAct();
+  const submit = e => {
+    e.preventDefault();
+    if (pw.length < 8) return setErr(t('Password must be at least 8 characters.'));
+    run(async () => { await finishRecovery(pw, code); say(t('Password changed ✓')); });
   };
   return h('form.auth', { onSubmit: submit },
     h(Logo), h('p.auth-tag', t('Choose a new password.')),
-    F(t('New password'), In(pw, setPw, { type: 'password', autoComplete: 'new-password', placeholder: t('At least 8 characters') })),
-    h(Er, { e: err }),
-    h('button.btn', { type: 'submit', disabled: busy }, busy ? t('Working...') : t('Save password')));
+    S.phase === 'loading' ? h(Sk) : h(Frag, null,
+      needCode ? F(t('Recovery code'), CodeIn(code, setCode), t('Your data is encrypted. The recovery code lets the new password open it.')) : null,
+      F(t('New password'), In(pw, setPw, { type: 'password', autoComplete: 'new-password', placeholder: t('At least 8 characters') })),
+      h(Er, { e: err }),
+      h('button.btn', { type: 'submit', disabled: busy }, busy ? t('Working...') : t('Save password')),
+      needCode ? h('button.auth-alt', { type: 'button', onClick: () => (pw.length < 8 ? setErr(t('Password must be at least 8 characters.')) : setAsk(true)) }, t('I lost my recovery code')) : null),
+    ask ? h(Confirm, { title: t(LOST.title), text: t(LOST.text), yes: t(LOST.yes), danger: true, busy, error: err, onNo: () => setAsk(false), onYes: () => run(async () => { await startOver(pw); setAsk(false); say(t('Password changed ✓')); }) }) : null);
 }
 
 // config.js still has the placeholders

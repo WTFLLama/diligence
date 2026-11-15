@@ -28,11 +28,11 @@ function Item({ m, n }) {
       if (!cat || cat.kind !== 'expense') throw new Error('Category is required.');
       e = { id: uid(), kind: 'return', date: f.date, rdate: f.date, merchant: f.merchant || t('Captured'), note: t('Return'), n: 1, src: 'capture', lines: [{ acc: f.pay, amt: r2(amount), date: f.date }, { acc: f.acc, amt: -r2(amount), date: f.date }] };
     } else e = postExpense(m, { date: f.date, pay: f.pay, merchant: f.merchant || t('Captured'), party: f.party, splits: [{ acc: f.acc, amount }], src: 'capture' });
-    const saved = await saveEntry(e);
-    await updateInbox([n.id], 'saved', saved.id);
+    await saveEntry(e);
+    await updateInbox([n.id]);
     say(t('Saved ✓'));
   });
-  const dismiss = () => run(() => updateInbox([n.id], 'dismissed'));
+  const dismiss = () => run(() => updateInbox([n.id]));
   return h('div.nt', null,
     h('div.nt-h', null, h('b', null, p ? (f.merchant || t('Captured')) : t('Could not read an amount')), p ? h('span', { className: f.kind === 'expense' ? '' : 'up', style: { fontWeight: 700 } }, (f.kind === 'expense' ? '−' : '+') + tl(num(f.amount))) : null),
     h('div.help', { style: { marginTop: 2 } }, (n.ch === 'email' ? t('E-mail') : 'SMS') + (n.sender ? ' · ' + n.sender : '') + ' · ' + dshort(String(n.at).slice(0, 10))),
@@ -59,5 +59,5 @@ export function Inbox({ m, close }) {
     list.map(n => h(Item, { key: n.id, m, n })),
     h('div.row', { style: { marginTop: 14 } },
       h('button.btn.gh', { disabled: busy, onClick: () => run(refreshInbox) }, t('Check again')),
-      list.length > 1 ? h('button.btn.gh', { disabled: busy, onClick: () => run(() => updateInbox(list.map(n => n.id), 'dismissed')) }, t('Dismiss all')) : null));
+      list.length > 1 ? h('button.btn.gh', { disabled: busy, onClick: () => run(() => updateInbox(list.map(n => n.id))) }, t('Dismiss all')) : null));
 }

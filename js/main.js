@@ -3,7 +3,7 @@ import { createRoot } from '../vendor/react.js';
 import { h, useState, useEffect, Ic, Sk, Pg, Er } from './lib.js';
 import { useStore, boot, load } from './store.js';
 import { t, applyTheme, terr } from './prefs.js';
-import { Auth, Setup, NewPassword } from './screens/auth.js';
+import { Auth, Setup, NewPassword, Lock, RecoveryCode } from './screens/auth.js';
 import { Home } from './screens/home.js';
 import { Add } from './screens/add.js';
 import { Tx } from './screens/tx.js';
@@ -38,10 +38,13 @@ function App() {
   if (S.phase === 'setup') return h('div.app', null, h(Setup));
   if (S.recovering) return h('div.app', null, toast, h(NewPassword));
   if (S.phase === 'auth') return h('div.app', null, toast, h(Auth, { error: S.error }));
+  if (S.phase === 'lock') return h('div.app', null, toast, h(Lock));
   if (S.phase === 'loading') return h('div.app', null, h(Pg, { title: t('Diligence') }, h(Sk)));
   if (S.phase === 'error') return h('div.app', null, h(Pg, { title: t('Diligence') }, h(Er, { e: terr(S.error) }),
     h('button.btn', { style: { width: '100%', marginTop: 12 }, onClick: load }, t('Try again'))));
 
+  // a new account sees its recovery code once, before anything else
+  if (S.data.recovery && !(S.data.settings || {}).rc_ack) return h('div.app', null, toast, h(RecoveryCode, { code: S.data.recovery }));
   const m = S.model;
   const go = (k, p) => { if (k !== 'add') setEdit(null); setPreset(p || null); setSc(k); window.scrollTo(0, 0); };
   const back = () => go('more');

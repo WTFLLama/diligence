@@ -20,7 +20,7 @@ const clean = e => {
   return msg;
 };
 
-// Calls a database function (see supabase/schema.sql). One call = one transaction.
+// Calls a database function. One call = one transaction.
 export async function rpc(fn, args) {
   let res;
   try { res = await sb().rpc(fn, args || {}); } catch (e) { throw new Error(clean(e)); }
@@ -40,5 +40,5 @@ export const auth = {
   google: () => done(sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: here() } }))
 };
 
-// address + secret for the iPhone Shortcut / Gmail forwarder (automatic capture)
-export const captureEndpoint = () => (cfg.supabaseUrl || '').replace(/\/+$/, '') + '/rest/v1/rpc/inbox_capture';
+// address for the iPhone Shortcut / Gmail forwarder (automatic capture): a server function that encrypts the message for its owner
+export const captureEndpoint = () => (cfg.supabaseUrl || '').replace(/\/+$/, '') + '/functions/v1/capture';

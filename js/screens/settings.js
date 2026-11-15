@@ -3,7 +3,7 @@ import { h, useState, useRef, Pg, Pills, F, In, NumIn, DateIn, Dd, Sw, Er, Dlg, 
 import { accountsOf, balances, isDebitKind } from '../engine.js';
 import { t, tf, tl, PREF, terr } from '../prefs.js';
 import { useStore, saveSettings, saveAccount, deleteAccount, rotateCaptureToken, exportBundle, importBundle, wipe, signOut, say } from '../store.js';
-import { config, captureEndpoint } from '../api.js';
+import { captureEndpoint } from '../api.js';
 import { kindLabel, sideLabel, KIND_LABEL } from '../ui.js';
 
 const GROUPS = { pay: ['cash', 'card', 'loan'], exp: ['expense'], inc: ['income'], oth: ['receivable', 'payable', 'stock', 'investment'] };
@@ -130,7 +130,7 @@ function Capture({ m }) {
       h('ol.steps', null,
         h('li', null, t('Shortcuts app > Automation > New > Message. Set "Message contains" to a word your bank always uses (e.g. TL) and choose "Run immediately".')),
         h('li', null, t('Add the action "Get contents of URL". URL:'), h('div.codebox', null, captureEndpoint())),
-        h('li', null, t('Method POST. Add a header:'), h('div.codebox', null, 'apikey: ' + (config.supabaseKey || ''))),
+        h('li', null, t('Method POST.')),
         h('li', null, t('Request body JSON, with p_text set to the "Shortcut Input" (the message):'), h('div.codebox', null, body))),
       h('div.help', null, t('The message waits under the bell icon until you give it a category. Nothing is booked automatically.')),
       h('button.sb', { style: { marginTop: 10 }, disabled: busy, onClick: () => setAsk(true) }, t('Make a new secret token'))),
@@ -141,7 +141,7 @@ function Capture({ m }) {
 
 /* ---------- backup, account ---------- */
 function Data({ m }) {
-  const S = useStore(), inp = useRef(null), [ask, setAsk] = useState(null), [run, busy, err, setErr] = useAct();
+  const S = useStore(), inp = useRef(null), [ask, setAsk] = useState(null), [code, setCode] = useState(false), [run, busy, err, setErr] = useAct();
   const download = () => {
     const blob = new Blob([JSON.stringify(exportBundle())], { type: 'application/json' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = 'diligence-backup-' + m.today + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
@@ -166,6 +166,12 @@ function Data({ m }) {
       h('div.kv', null, h('span', null, t('In your ledger')), h('b', null, tf('{0} entries · {1} accounts', real, m.accounts.length))),
       h('div.row', { style: { marginTop: 12 } }, h('button.btn.gh', { onClick: signOut }, t('Sign out')), h('button.btn.gh', { style: { color: 'var(--rd)' }, onClick: () => setAsk({ type: 'wipe' }) }, t('Delete all my data'))),
       h('div.help', null, t('To change your password, sign out and use "Forgot your password?".'))),
+    h('div.card', null, h('div.lb', t('Recovery code')),
+      h('div.help', null, t('If you forget your password, this code is the only way back to your data. Keep it somewhere safe.')),
+      code ? h('div.codebox', { style: { marginTop: 10 } }, S.data.recovery) : null,
+      h('div.row', { style: { marginTop: 10 } },
+        h('button.btn.gh', { onClick: () => setCode(!code) }, code ? t('Hide') : t('Show')),
+        code ? h('button.btn.gh', { onClick: async () => { try { await navigator.clipboard.writeText(S.data.recovery); say(t('Copied ✓')); } catch (e) { /* stays on screen */ } } }, t('Copy')) : null)),
     ask && ask.type === 'import' ? h(Confirm, { title: t('Load this backup?'), busy, error: err, danger: real > 0,
       text: tf('The file has {0} entries and {1} accounts.', ask.bundle.entries.length, ask.bundle.accounts.length) + ' ' + (real > 0 ? tf('It REPLACES everything in this account ({0} entries). Download a backup first if you are not sure.', real) : t('It will be loaded into this account.')),
       yes: real > 0 ? t('Replace my data') : t('Load'), onNo: () => setAsk(null),
