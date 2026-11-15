@@ -63,21 +63,6 @@ export function Lock() {
     ask ? h(Confirm, { title: t(LOST.title), text: t(LOST.text), yes: t(LOST.yes), danger: true, busy, error: err, onNo: () => setAsk(false), onYes: () => run(async () => { await startOver(pw); setAsk(false); }) }) : null);
 }
 
-// Shown once, right after the account's data key is made. The code is the only way back in if the password is forgotten.
-export function RecoveryCode({ code }) {
-  const [copied, setCopied] = useState(false), g = String(code || '').split('-');
-  const copy = async () => { try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch (e) { /* the code stays on screen */ } };
-  return h('div.tut.dark', { style: { '--tbg': '#191b18' } },
-    h('div.tut-in', null,
-      h('div.tut-stage', null, h('section.tp', null,
-        h('h1.tt', null, t('Your recovery code')),
-        h('p.tsub', null, t('If you forget your password, this code is the only way back to your data. Keep it somewhere safe.')),
-        h('div.tbody', null,
-          h('div.rcode', { 'aria-label': code }, [0, 2, 4].map(i => h('div', { key: i }, h('span', null, g[i]), h('span', null, g[i + 1])))),
-          h('button.tadd', { type: 'button', onClick: copy }, copied ? t('Copied ✓') : t('Copy'))),
-        h('div.tfoot', null, h('button.tbtn', { type: 'button', onClick: () => saveSettings({ rc_ack: true }) }, t('I saved it')))))));
-}
-
 // shown after the user opens the reset link from the e-mail
 export function NewPassword() {
   const S = useStore(), v = vaultState(), settled = S.phase === 'lock' || S.phase === 'ready', needCode = settled && v.exists && !v.unlocked;
@@ -90,7 +75,7 @@ export function NewPassword() {
   return h('form.auth', { onSubmit: submit },
     h(Logo), h('p.auth-tag', t('Choose a new password.')),
     S.phase === 'loading' ? h(Sk) : h(Frag, null,
-      needCode ? F(t('Recovery code'), CodeIn(code, setCode), t('Your data is encrypted. The recovery code lets the new password open it.')) : null,
+      needCode ? F(t('Recovery code'), CodeIn(code, setCode)) : null,
       F(t('New password'), In(pw, setPw, { type: 'password', autoComplete: 'new-password', placeholder: t('At least 8 characters') })),
       h(Er, { e: err }),
       h('button.btn', { type: 'submit', disabled: busy }, busy ? t('Working...') : t('Save password')),

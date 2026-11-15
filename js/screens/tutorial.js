@@ -1,9 +1,11 @@
 // tutorial.js - shown once to a new member before the first Overview: payment methods, automatic capture (when a card was added),
 // expense categories, Diligence features (placeholder), shortcut (placeholder). Page by page, no scrolling.
-import { h, useState, useEffect, useRef, Ic, Em, Er, Frag, num, cx } from '../lib.js';
+import { h, useState, useEffect, useRef, Ic, Er, EmPicker, Frag, num, cx } from '../lib.js';
 import { accountsOf } from '../engine.js';
 import { t, PREF, terr } from '../prefs.js';
-import { saveAccount, deleteAccount, saveSettings } from '../store.js';
+import { getState } from '../store.js';
+const getM = () => getState().model;
+import { saveAccount, deleteAccount, changeAccounts, saveSettings } from '../store.js';
 
 // page backgrounds: the Overview colours
 const BG = { pay: ['#dfff00', 0], cap: ['#bdedf2', 0], cat: ['#ff8c77', 0], feat: ['#191b18', 1], sc: ['#f5f5ec', 0] };
@@ -19,12 +21,13 @@ export function Tutorial({ m, leaving, done }) {
   const [pms, setPms] = useState([]);
   const [f, setF] = useState({ amount: '', lim: '', name: '', kind: 'cash', day: '', det: false });
   const [cap, setCap] = useState({});
-  const [cats, setCats] = useState(() => accountsOf(m, ['expense']).filter(a => !a.system_key).map(a => ({ id: a.id, name: a.name, orig: a.name })));
+  const [cats, setCats] = useState(() => accountsOf(m, ['expense']).filter(a => !a.system_key).map(a => ({ id: a.id, name: a.name, orig: a.name, emoji: a.emoji || '', emo0: a.emoji || '' })));
   const [gone, setGone] = useState([]);
-  const [feat, setFeat] = useState(0);
+  const [feat, setFeat] = useState(0), [capOn, setCapOn] = useState(false), [pick, setPick] = useState(null);
   const nameRef = useRef(null);
 
-  const pages = ['pay', ...(pms.some(p => p.kind === 'card') ? ['cap'] : []), 'cat', 'feat', 'sc'];
+  // the capture page only with a credit card; the shortcut page only when capture was turned on
+  const pages = ['pay', ...(pms.some(p => p.kind === 'card') ? ['cap'] : []), 'cat', 'feat', ...(capOn ? ['sc'] : [])];
   const key = pages[Math.min(page, pages.length - 1)], [bg, dark] = BG[key];
 
   useEffect(() => {
@@ -75,10 +78,9 @@ export function Tutorial({ m, leaving, done }) {
       const avail = num(f.amount), lim = num(f.lim);
       if (f.amount !== '' && f.lim === '') throw new Error('Enter the actual limit too.');
       if (f.lim !== '') {
-        if (avail > lim) throw new Error('Current limit cannot be more than the actual limit.');
         p.credit_limit = lim;
-        const debt = Math.round((lim - avail) * 100) / 100;
-        if (debt > 0) p.opening = { amount: debt, date: m.today };
+        const debt = Math.round((lim - avail) * 100) / 100;      // negative when the card is overpaid: it then lowers total card debt
+        if (debt !== 0) p.opening = { amount: debt, date: m.today };
       }
     } else { const amt = num(f.amount); if (amt) p.opening = { amount: amt, date: m.today }; }
     if (f.kind === 'card' && f.day !== '') {
@@ -108,7 +110,7 @@ export function Tutorial({ m, leaving, done }) {
       pms.length ? h('div.tchips', null, pms.map(p => h('span.tchip', { key: p.id }, h('span', null, p.name), h('small', null, t(p.kind === 'card' ? 'Credit card' : 'Cash & bank')),
         h('button', { type: 'button', 'aria-label': t('Remove'), disabled: busy, onClick: () => dropPm(p) }, X(12))))) : null,
       f.kind === 'card' ? h('div.tamt2', null, amtIn('tamt', t('Current limit (₺)'), 'amount', true), amtIn('tlim', t('Actual limit (₺)'), 'lim', true))
-        : amtIn('tamt', t('Amount (₺)'), 'amount'),
+        : amtIn('tamt', t('Balance (₺)'), 'amount'),
       h('div', { key: 'n' + shake, className: shake ? 'shake' : '' },
         h('label.tl', { htmlFor: 'tnm' }, t('Payment method name')),
         h('input.ti', { id: 'tnm', ref: nameRef, value: f.name, placeholder: t('e.g. QNB Checking'), autoCapitalize: 'words', autoComplete: 'off', onChange: e => setF(p => ({ ...p, name: e.target.value })) })),
@@ -128,12 +130,11 @@ export function Tutorial({ m, leaving, done }) {
   const cards = pms.filter(p => p.kind === 'card'), cmp = cards.length > 2;
   const cv = id => cap[id] || { ch: 'sms', last4: '', from: '' };
   const setCv = (id, patch) => setCap(c => ({ ...c, [id]: { ...cv(id), ...patch } }));
+  const anyOn = cards.some(c => cv(c.id).ch !== 'none');
   const turnOn = () => run(async () => {
-    for (const c of cards) {
-      const v = cv(c.id);
-      if (v.ch !== 'none') await saveAccount({ id: c.id, name: c.name, capture_channel: v.ch, capture_last4: v.last4, capture_sender: v.from.trim() });
-    }
-    go(page + 1);
+    const ops = cards.filter(c => cv(c.id).ch !== 'none').map(c => { const v = cv(c.id); return { save: { id: c.id, name: c.name, capture_channel: v.ch, capture_last4: v.last4, capture_sender: v.from.trim() } }; });
+    if (ops.length) { await changeAccounts(ops); setCapOn(true); }
+    setTimeout(() => go(page + 1), 30);      // the shortcut page depends on capOn, which updates on the next render
   });
   const pCap = () => h(Frag, null,
     h('h1.tt', null, t('Turn on automatic capture?')),
@@ -151,20 +152,21 @@ export function Tutorial({ m, leaving, done }) {
       })),
       h(Er, { e: err })),
     h('div.tfoot', null,
-      h('button.tbtn', { type: 'button', disabled: busy, onClick: turnOn }, t('Turn on')),
-      h('button.tbtn.gh', { type: 'button', disabled: busy, onClick: () => go(page + 1) }, t('Skip'))));
+      anyOn ? h('button.tbtn', { type: 'button', disabled: busy, onClick: turnOn }, t('Turn on')) : null,
+      h('button', { type: 'button', className: cx('tbtn', anyOn && 'gh'), disabled: busy, onClick: () => go(page + 1) }, t('Skip'))));
 
   /* ---------- expense categories ---------- */
   const saveCats = () => run(async () => {
-    for (const id of gone) await deleteAccount(id);
+    const ops = gone.map(id => ({ del: id }));
     for (const c of cats) {
       const name = c.name.trim();
-      if (!name) { if (c.id) await deleteAccount(c.id); continue; }
-      if (!c.id) await saveAccount({ name, kind: 'expense' });
-      else if (name !== c.orig) await saveAccount({ id: c.id, name });
+      if (!name) { if (c.id) ops.push({ del: c.id }); continue; }
+      if (!c.id) ops.push({ save: { name, kind: 'expense', emoji: c.emoji } });
+      else if (name !== c.orig || c.emoji !== c.emo0) ops.push({ save: { id: c.id, name, emoji: c.emoji } });
     }
+    if (ops.length) await changeAccounts(ops);
     setGone([]);
-    setCats(list => list.filter(c => c.name.trim()).map(c => ({ ...c, orig: c.name.trim() })));
+    setCats(accountsOf(getM(), ['expense']).filter(x => !x.system_key).map(x => ({ id: x.id, name: x.name, orig: x.name, emoji: x.emoji || '', emo0: x.emoji || '' })));
     go(page + 1);
   });
   const lastCat = useRef(false);
@@ -174,12 +176,14 @@ export function Tutorial({ m, leaving, done }) {
     h('div.tbody', null,
       h('div.tcats', null,
         cats.map((c, i) => h('div.tcat', { key: c.id || 'n' + i },
-          c.id ? h(Em, { id: c.id }) : null,
+          h('button', { type: 'button', className: cx('teb', !c.emoji && 'none'), 'aria-label': t('Pick an emoji'), onClick: () => setPick(i) }, c.emoji ? h('span.em', null, c.emoji) : null),
           h('input', { value: c.name, 'aria-label': c.orig || t('Name'), onChange: e => setCats(list => list.map((x, j) => j === i ? { ...x, name: e.target.value } : x)) }),
           h('button', { type: 'button', 'aria-label': t('Remove'), onClick: () => { if (c.id) setGone(g => [...g, c.id]); setCats(list => list.filter((_, j) => j !== i)); } }, X(14)))),
         cats.length < 12 ? h('button.tcat.add', { type: 'button', 'aria-label': t('Add'), onClick: () => { lastCat.current = true; setCats(list => [...list, { id: '', name: '', orig: '' }]); } }, '+') : null),
       h(Er, { e: err })),
-    h('div.tfoot', null, h('button.tbtn', { type: 'button', disabled: busy, onClick: saveCats }, t('Continue'))));
+    h('div.tfoot', null, h('button.tbtn', { type: 'button', disabled: busy, onClick: saveCats }, t('Continue'))),
+    pick != null && cats[pick] ? h(EmPicker, { title: cats[pick].name, current: cats[pick].emoji || '', onNo: () => setPick(null),
+      onPick: e => { const i = pick; setPick(null); setCats(list => list.map((x, j) => (j === i ? { ...x, emoji: e || '' } : x))); } }) : null);
 
   /* ---------- Diligence features (placeholder) ---------- */
   const bars = [[38, 18, 0], [52, 10, 8], [44, 22, 0], [60, 8, 14], [48, 16, 0], [56, 12, 6]];

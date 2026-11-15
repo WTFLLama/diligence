@@ -853,7 +853,6 @@ export const TR = {
   "Current limit (₺)": "Güncel limit (₺)",
   "Actual limit (₺)": "Asıl limit (₺)",
   "Enter the actual limit too.": "Asıl limiti de gir.",
-  "Current limit cannot be more than the actual limit.": "Güncel limit asıl limitten büyük olamaz.",
   "Enter your password to open your data on this device.": "Bu cihazda verilerini açmak için şifreni gir.",
   "Unlock": "Kilidi aç",
   "Use my recovery code": "Kurtarma kodumu kullan",
@@ -862,19 +861,15 @@ export const TR = {
   "Start over?": "Baştan başlansın mı?",
   "Without your password or recovery code nobody can read your data, not even us. Starting over erases it for good and gives you an empty account.": "Şifren ya da kurtarma kodun olmadan verilerini kimse okuyamaz, biz de okuyamayız. Baştan başlarsan veriler kalıcı olarak silinir ve hesabın boş açılır.",
   "Erase and start over": "Sil ve baştan başla",
-  "Your recovery code": "Kurtarma kodun",
-  "If you forget your password, this code is the only way back to your data. Keep it somewhere safe.": "Şifreni unutursan verilerine yalnızca bu kodla ulaşabilirsin. Güvenli bir yere kaydet.",
-  "Copy": "Kopyala",
   "Copied ✓": "Kopyalandı ✓",
-  "I saved it": "Kaydettim",
   "Show": "Göster",
-  "Hide": "Gizle",
-  "Your data is encrypted. The recovery code lets the new password open it.": "Verilerin şifreli. Yeni şifrenin onları açabilmesi için kurtarma kodu gerekiyor.",
   "Wrong password.": "Şifre yanlış.",
   "Wrong recovery code.": "Kurtarma kodu yanlış.",
   "Your data changed on another device. Try again.": "Verilerin başka bir cihazda değişti. Tekrar dene.",
   "This browser cannot encrypt your data. Open the app over https in an up-to-date browser.": "Bu tarayıcı verilerini şifreleyemiyor. Uygulamayı güncel bir tarayıcıda https üzerinden aç.",
-  "Method POST.": "Yöntem POST."
+  "Method POST.": "Yöntem POST.",
+  "Balance (₺)": "Bakiye (₺)",
+  "in credit": "alacak"
 };
 
 // messages with a changing part (mostly from the database): [pattern, Turkish text or (parts, translate) => text]

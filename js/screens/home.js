@@ -79,7 +79,7 @@ export function Home({ m, go, nIb, openInbox, enter }) {
         h('div.cc-main', null, h('b', null, c.name),
           h('span.cc-sub', null, c.cutOff ? tf('Cut-off {0}', dmini(c.cutOff)) : t('No cut-off day set')),
           c.future > 0.005 ? h('span.cc-sub', null, tf('{0} in instalments', tl(c.future, 0))) : null),
-        h('div.cc-end', null, h('span.cc-lim', null, P(c.debt, 0)),
-          h('span.cc-sub', null, c.available != null ? tf('{0} available', mv(nfmt(c.available, 0))) : t('debt'))))))
+        h('div.cc-end', null, h('span.cc-lim', null, P(Math.abs(c.debt), 0)),
+          h('span.cc-sub', null, c.debt < 0 ? t('in credit') : c.available != null ? tf('{0} available', mv(nfmt(c.available, 0))) : t('debt'))))))
       : null));
 }

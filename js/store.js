@@ -222,6 +222,8 @@ export const deleteEntry = id => commit(d => { DB.deleteEntry(d, id); });
 /* ---------- accounts and categories ---------- */
 export const saveAccount = p => commit(d => DB.saveAccount(d, p).account);
 export const deleteAccount = id => commit(d => DB.deleteAccount(d, id));
+// several changes in one save: [{ save: {...} } | { del: id }]
+export const changeAccounts = ops => commit(d => ops.map(o => (o.del ? DB.deleteAccount(d, o.del) : DB.saveAccount(d, o.save).account)));
 
 /* ---------- normalization marks, budget ---------- */
 export async function setMarks(items, mode, months) {
